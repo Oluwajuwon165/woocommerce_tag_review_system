@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{{ tag.tag_title }} — page {{ page.page_number }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<div class="page shell wide">
+  <header class="hero compact">
+    <div>
+      <a class="back" href="{{ url_for('tag_detail', run_id=run_id, tag_id=tag.tag_id) }}">← Tag detail</a>
+      <h1>{{ tag.tag_title }} — page {{ page.page_number }}</h1>
+      <p>Status: <span class="badge">{{ page.status }}</span></p>
+    </div>
+    <div class="hero-actions">
+      <button id="focus-page-btn" data-run-id="{{ run_id }}" data-tag-id="{{ tag.tag_id }}" data-page-number="{{ page.page_number }}">Go to opened tab</button>
+    </div>
+  </header>
+
+  <section class="stats-grid">
+    <div class="stat"><span>Outcome</span><strong>{{ page.status }}</strong></div>
+    <div class="stat"><span>DOM rows</span><strong>{{ page.total_rows }}</strong></div>
+    <div class="stat"><span>Candidate rows</span><strong>{{ page.candidate_rows or 0 }}</strong></div>
+    <div class="stat"><span>Helper rows</span><strong>{{ page.helper_rows_count or 0 }}</strong></div>
+    <div class="stat"><span>Duplicate rows</span><strong>{{ page.duplicate_rows_count or 0 }}</strong></div>
+    <div class="stat"><span>Assessed rows</span><strong>{{ page.assessed_rows or 0 }}</strong></div>
+    <div class="stat"><span>Skipped rows</span><strong>{{ page.skipped_rows_count or 0 }}</strong></div>
+    <div class="stat"><span>Checked</span><strong>{{ page.checkbox_count }}</strong></div>
+    <div class="stat"><span>LLM calls</span><strong>{{ page.llm_call_count or 0 }}</strong></div>
+    <div class="stat"><span>Cache hits</span><strong>{{ page.cache_hit_count or 0 }}</strong></div>
+    <div class="stat"><span>Fallbacks</span><strong>{{ page.fallback_count or 0 }}</strong></div>
+    <div class="stat"><span>API failures</span><strong>{{ page.api_failure_count or 0 }}</strong></div>
+    <div class="stat"><span>Parse failures</span><strong>{{ page.parse_failure_count or 0 }}</strong></div>
+    <div class="stat"><span>ACP ready</span><strong>{{ 'Yes' if page.acp_bulk_ready else 'No' }}</strong></div>
+  </section>
+
+  <div id="focus-message" class="hidden"></div>
+
+  {% if page.error_summary %}
+  <section class="card error-card">
+    <h2>Page failure summary</h2>
+    <p><strong>{{ page.error_type }}</strong> — {{ page.error_summary }}</p>
+    <p class="muted">{{ page.last_error }}</p>
+  </section>
+  {% endif %}
+
+  <section class="card">
+    <h2>Assessments</h2>
+    <div class="filter-row" id="assessment-filters">
+      <button type="button" class="secondary assessment-filter active" data-filter="all">All</button>
+      <button type="button" class="secondary assessment-filter" data-filter="keep">Keep</button>
+      <button type="button" class="secondary assessment-filter" data-filter="mark">Mark</button>
+      <button type="button" class="secondary assessment-filter" data-filter="review">Review</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Page</th>
+            <th>Outcome</th>
+            <th>Confidence</th>
+            <th>Source</th>
+            <th>Product title</th>
+            <th>Checked?</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in page.assessments %}
+          <tr data-decision="{{ item.decision }}">
+            <td>{{ item.page_number }}</td>
+            <td><span class="badge">{{ item.decision }}</span></td>
+            <td>{{ '%.2f'|format(item.confidence|float) }}</td>
+            <td>{{ item.source }}</td>
+            <td>{{ item.product_title }}</td>
+            <td>{{ 'Yes' if item.checkbox_ticked else 'No' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6">No assessment records stored.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Row diagnostics</h2>
+    <p class="muted">Use this to see exactly why a row was skipped, why a checkbox did not get ticked, and whether GitHub Models, Gemini, cache, or fallback handled the decision.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Row</th>
+            <th>Type</th>
+            <th>Row ID</th>
+            <th>Product ID</th>
+            <th>Title found</th>
+            <th>Product title</th>
+            <th>Decision</th>
+            <th>Confidence</th>
+            <th>Source</th>
+            <th>Provider</th>
+            <th>Model</th>
+            <th>Tier</th>
+            <th>LLM called</th>
+            <th>Cache hit</th>
+            <th>Parse status</th>
+            <th>API error</th>
+            <th>Checkbox result</th>
+            <th>Skip reason</th>
+            <th>Row preview</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in page.row_diagnostics %}
+          <tr>
+            <td>{{ row.row_index }}</td>
+            <td>{{ row.row_type or '—' }}</td>
+            <td class="mono small">{{ row.row_dom_id or '—' }}</td>
+            <td class="mono small">{{ row.product_id or '—' }}</td>
+            <td>{{ 'Yes' if row.title_found else 'No' }}</td>
+            <td>{{ row.product_title or '—' }}</td>
+            <td>{{ row.decision or '—' }}</td>
+            <td>{% if row.confidence is not none %}{{ '%.2f'|format(row.confidence|float) }}{% else %}—{% endif %}</td>
+            <td>{{ row.classification_source or '—' }}</td>
+            <td>{{ row.provider_used or '—' }}</td>
+            <td class="mono small">{{ row.model_used or '—' }}</td>
+            <td>{{ row.tier_used or '—' }}</td>
+            <td>{{ 'Yes' if row.llm_called else 'No' }}</td>
+            <td>{{ 'Yes' if row.cache_hit else 'No' }}</td>
+            <td>{{ row.parse_status or '—' }}</td>
+            <td>{{ row.api_error or '—' }}</td>
+            <td>{{ row.checkbox_result or '—' }}</td>
+            <td>{{ row.skip_reason or '—' }}</td>
+            <td class="mono small">{{ row.row_text_preview or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="16">No row diagnostics stored.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Page logs</h2>
+    <div class="log-box tall-log">
+      {% for log in page.logs %}
+        <div class="log-line">[{{ log.timestamp }}] {{ log.level }} — {{ log.message }} {% if log.context %}<span class="muted">{{ log.context }}</span>{% endif %}</div>
+      {% else %}
+        <div class="log-line">No logs yet.</div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+
+<script>
+(function () {
+  const buttons = Array.from(document.querySelectorAll('.assessment-filter'));
+  const rows = Array.from(document.querySelectorAll('tbody tr[data-decision]'));
+  if (!buttons.length || !rows.length) return;
+  function applyFilter(filter) {
+    buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.filter === filter));
+    rows.forEach(row => {
+      const decision = (row.dataset.decision || '').toLowerCase();
+      row.style.display = (filter === 'all' || decision === filter) ? '' : 'none';
+    });
+  }
+  buttons.forEach(btn => btn.addEventListener('click', () => applyFilter(btn.dataset.filter)));
+  applyFilter('all');
+})();
+</script>
+</body>
+</html>

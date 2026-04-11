@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tag Cleaning Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body data-page="dashboard">
+  <div class="page shell wide">
+    <header class="hero">
+      <div>
+        <h1>WooCommerce Tag-Cleaning Review</h1>
+        <p>Local web app for human-assisted tag cleanup with live progress, timers, diagnostics, and preserved review pages.</p>
+      </div>
+      <div class="hero-actions">
+        <button id="close-browser-btn" class="secondary">Close browser</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Connection and login settings</h2>
+      <div id="settings-message" class="hidden"></div>
+      <div class="grid-2">
+        <label><span>WordPress login URL</span><input id="site-login-url" type="text" value="{{ settings.site.login_url }}"></label>
+        <label><span>Base site URL</span><input id="site-base-url" type="text" value="{{ settings.site.base_url }}"></label>
+        <label><span>Username</span><input id="credentials-username" type="text" value="{{ settings.credentials.username }}"></label>
+        <label>
+          <span>Password</span>
+          <div class="secret-row"><input id="credentials-password" type="password" value="{{ settings.credentials.password }}"><button type="button" class="secondary secret-toggle" data-target="credentials-password">Show</button></div>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Provider priority</h2>
+      <p class="muted">Enabled providers are tried from top to bottom. Move them into the order your team wants.</p>
+      <div id="provider-priority-list" class="priority-list">
+        {% for key in provider_catalog.order %}
+          {% set provider = provider_catalog.providers[key] %}
+          <div class="priority-item" data-provider="{{ key }}">
+            <div>
+              <strong>{{ provider.label }}</strong>
+              <div class="muted small">{{ key }}</div>
+            </div>
+            <div class="priority-actions">
+              <button type="button" class="secondary priority-up" data-provider="{{ key }}">↑</button>
+              <button type="button" class="secondary priority-down" data-provider="{{ key }}">↓</button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>LLM providers</h2>
+      <p class="muted">Enable one or more providers. The app will try the enabled providers in your saved priority order until one succeeds. Your selections stay saved after refresh.</p>
+      <div class="provider-grid">
+        {% for key in provider_catalog.order %}
+          {% set provider = settings.llm.providers[key] %}
+          {% set models = provider_catalog.model_catalog.get(key, []) %}
+          <div class="provider-card" data-provider="{{ key }}">
+            <div class="provider-head">
+              <strong>{{ provider.label }}</strong>
+              <label class="switch-line"><input type="checkbox" class="provider-enabled" data-provider="{{ key }}" {% if provider.enabled %}checked{% endif %}> <span>Enabled</span></label>
+            </div>
+            <label><span>API key</span><div class="secret-row"><input class="provider-api-key" data-provider="{{ key }}" type="password" value="{{ provider.api_key }}"><button type="button" class="secondary secret-toggle" data-provider="{{ key }}">Show</button></div></label>
+            <label><span>Model</span>
+              <select class="provider-model-select" data-provider="{{ key }}">
+                {% set provider_model = provider.model or '' %}
+                {% for model in models %}
+                  <option value="{{ model }}" {% if provider_model == model %}selected{% endif %}>{{ model }}</option>
+                {% endfor %}
+                {% if provider_model and provider_model not in models %}
+                  <option value="{{ provider_model }}" selected>{{ provider_model }} (current)</option>
+                {% endif %}
+                <option value="__custom__">Custom model…</option>
+              </select>
+            </label>
+            <label class="provider-custom-model-wrap {% if provider.model and provider.model in models %}hidden{% endif %}" data-provider="{{ key }}"><span>Custom model</span><input class="provider-model-custom" data-provider="{{ key }}" type="text" value="{% if provider.model and provider.model not in models %}{{ provider.model }}{% endif %}" placeholder="Enter exact model ID"></label>
+            {% if provider.base_url is defined %}<label><span>Base URL</span><input class="provider-base-url" data-provider="{{ key }}" type="text" value="{{ provider.base_url or '' }}"></label>{% endif %}
+            {% if provider.api_version is defined %}<label><span>API version</span><input class="provider-api-version" data-provider="{{ key }}" type="text" value="{{ provider.api_version or '' }}"></label>{% endif %}
+            {% if provider.organization is defined %}<label><span>Organization (optional)</span><input class="provider-organization" data-provider="{{ key }}" type="text" value="{{ provider.organization or '' }}"></label>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="grid-3 top-gap">
+        <label><span>Provider timeout (seconds)</span><input id="llm-timeout-seconds" type="number" min="1" value="{{ settings.llm.routing.timeout_seconds or 8 }}"></label>
+        <label class="checkbox-line"><input id="llm-enabled" type="checkbox" {% if settings.llm.enabled %}checked{% endif %}><span>Enable LLM calls</span></label>
+        <label class="checkbox-line"><input id="preserve-all-pages-open" type="checkbox" {% if settings.runtime.preserve_all_pages_open %}checked{% endif %}><span>Keep all page tabs open</span></label>
+      </div>
+      <div class="actions"><button id="save-settings-btn" class="secondary">Save settings</button></div>
+    </section>
+
+    <section class="card">
+      <h2>New run</h2>
+      <div id="form-error" class="error hidden"></div>
+      <div class="grid-3">
+        <label>
+          <span>Default strictness</span>
+          <select id="strictness">
+            <option value="loose" {% if default_strictness == 'loose' %}selected{% endif %}>Loose</option>
+            <option value="balanced" {% if default_strictness == 'balanced' %}selected{% endif %}>Balanced</option>
+            <option value="strict" {% if default_strictness == 'strict' %}selected{% endif %}>Strict</option>
+          </select>
+        </label>
+        <label><span>Default max pages</span><input id="max-pages" type="number" min="1" value="10"></label>
+        <label class="checkbox-line"><input id="dry-run" type="checkbox"><span>Dry run</span></label>
+      </div>
+      <label>
+        <span>Tags (one per line as <strong>Tag Title | Tag URL</strong>)</span>
+        <textarea id="tags-text" rows="9" placeholder="Waterproof Bathroom Foot Mat Price In Nigeria | https://example.com/wp-admin/edit.php?...&#10;Another Tag | https://example.com/wp-admin/edit.php?...&#10;"></textarea>
+      </label>
+      <div class="actions"><button id="start-run-btn">Start run</button></div>
+    </section>
+
+    <section class="card">
+      <h2>Recent runs</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Run ID</th><th>Status</th><th>Tag count</th><th>Actionable pages</th><th>Started</th><th>Duration</th><th>Open</th></tr>
+          </thead>
+          <tbody id="recent-runs-body">
+          {% for run in recent_runs %}
+            <tr>
+              <td><code>{{ run.run_id }}</code></td>
+              <td><span class="badge">{{ run.status }}</span></td>
+              <td>{{ run.total_tags }}</td>
+              <td>{{ run.actionable_pages_count }}</td>
+              <td>{{ run.started_at or run.created_at or '-' }}</td>
+              <td data-started-at="{{ run.started_at or '' }}" data-ended-at="{{ run.ended_at or '' }}">{{ run.duration_human or '-' }}</td>
+              <td><a href="{{ url_for('run_detail', run_id=run.run_id) }}">View run</a></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7">No runs yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>
