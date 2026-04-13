@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Extract Tags Data</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body data-page="extract-tags">
+  <div class="page shell wide">
+    <a class="back" href="{{ url_for('index') }}">← Back to dashboard</a>
+    <header class="hero">
+      <div>
+        <h1>Extract Tags Data from Website</h1>
+        <p>Pull all product tags, their admin URLs, and their counts into a reusable spreadsheet you can sort and download later.</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Extraction setup</h2>
+      <div id="extract-form-error" class="error hidden"></div>
+      <div class="grid-2">
+        <label><span>Tag category URL</span><input id="extract-category-url" type="text" placeholder="https://site.com/wp-admin/edit-tags.php?taxonomy=product_tag&post_type=product"></label>
+        <label><span>Website label (optional)</span><input id="extract-website-label" type="text" placeholder="Store name for history table"></label>
+        <label><span>WordPress login URL</span><input id="extract-login-url" type="text" value="{{ settings.site.login_url }}"></label>
+        <label><span>Base site URL</span><input id="extract-base-site-url" type="text" value="{{ settings.site.base_url }}"></label>
+        <label><span>Username</span><input id="extract-username" type="text" value="{{ settings.credentials.username }}"></label>
+        <label>
+          <span>Password</span>
+          <div class="secret-row"><input id="extract-password" type="password" value="{{ settings.credentials.password }}"><button type="button" class="secondary secret-toggle" data-target="extract-password">Show</button></div>
+        </label>
+      </div>
+
+      <h3>WooCommerce API mode</h3>
+      <p class="muted">Fastest option when the WooCommerce API is available. It extracts all product tags and counts directly, then builds the spreadsheet without browsing the tags page row by row.</p>
+      <div class="grid-3">
+        <label class="checkbox-line"><input id="extract-use-api" type="checkbox" {% if settings.woo_api.enabled %}checked{% endif %}><span>Use WooCommerce API mode</span></label>
+        <label><span>API page size</span><input id="extract-api-per-page" type="number" min="1" max="100" value="{{ settings.woo_api.per_page or 100 }}"></label>
+        <label><span>Request timeout (seconds)</span><input id="extract-timeout" type="number" min="5" value="{{ settings.woo_api.request_timeout_seconds or 30 }}"></label>
+      </div>
+      <div class="grid-2 top-gap">
+        <label>
+          <span>Consumer key</span>
+          <div class="secret-row"><input id="extract-api-consumer-key" type="password" value="{{ settings.woo_api.consumer_key or '' }}"><button type="button" class="secondary secret-toggle" data-target="extract-api-consumer-key">Show</button></div>
+        </label>
+        <label>
+          <span>Consumer secret</span>
+          <div class="secret-row"><input id="extract-api-consumer-secret" type="password" value="{{ settings.woo_api.consumer_secret or '' }}"><button type="button" class="secondary secret-toggle" data-target="extract-api-consumer-secret">Show</button></div>
+        </label>
+      </div>
+      <label><span>Optional base API URL override</span><input id="extract-api-base-url" type="text" value="{{ settings.woo_api.base_api_url or '' }}" placeholder="https://site.com/wp-json/wc/v3"></label>
+      <div class="actions">
+        <button id="extract-data-btn">Extract Data</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Live progress</h2>
+      <div id="extract-live-status" class="muted">No extraction has been started yet.</div>
+    </section>
+
+    <section class="card">
+      <h2>Extraction history</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Website</th><th>Status</th><th>Mode</th><th>Tags found</th><th>Progress</th><th>Created</th><th>Completed</th><th>Download</th></tr>
+          </thead>
+          <tbody id="extractions-body">
+          {% for extraction in extractions %}
+            <tr>
+              <td><code>{{ extraction.extraction_id }}</code></td>
+              <td class="wrap-cell">{{ extraction.website_label or extraction.base_site_url or '—' }}</td>
+              <td><span class="badge">{{ extraction.status }}</span></td>
+              <td>{{ extraction.mode or '-' }}</td>
+              <td>{{ extraction.tags_found or 0 }}</td>
+              <td class="wrap-cell">{{ extraction.progress_message or '-' }}</td>
+              <td>{{ extraction.created_at or '-' }}</td>
+              <td>{{ extraction.ended_at or '-' }}</td>
+              <td>{% if extraction.download_path %}<a href="{{ extraction.download_path }}">Download</a>{% else %}—{% endif %}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="9">No extractions yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <script src="{{ url_for('static', filename='extract_tags.js') }}"></script>
+</body>
+</html>
