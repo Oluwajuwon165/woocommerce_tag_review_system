@@ -1,0 +1,148 @@
+{
+  "site": {
+    "login_url": "https://example.com/wp-login.php",
+    "base_url": "https://example.com"
+  },
+  "credentials": {
+    "username": "",
+    "password": ""
+  },
+  "selectors": {
+    "username": "#user_login",
+    "password": "#user_pass",
+    "login_button": "#wp-submit",
+    "products_table": "#the-list",
+    "product_rows": "#the-list tr",
+    "stable_product_rows": "#the-list tr[id^='post-']",
+    "helper_rows": "#the-list tr.acp-ba-row, #the-list tr.inline-editor",
+    "checkbox": "th.check-column input[type='checkbox']",
+    "title_link": "td.name.column-name .row-title",
+    "next_page": ".tablenav-pages a.next-page, .tablenav-pages a.next"
+  },
+  "bulk_edit": {
+    "acp_bulk_row": "tbody#the-list tr.acp-ba-row",
+    "tag_bulk_edit_button": "#acp-ie-table tbody#the-list tr.acp-ba-row th.column-product_tag button.button, tbody#the-list tr.acp-ba-row th.column-product_tag button.button",
+    "top_bulk_action_select": "select[name='action']",
+    "top_bulk_action_apply": "#doaction",
+    "bottom_bulk_action_select": "select[name='action2']",
+    "bottom_bulk_action_apply": "#doaction2"
+  },
+  "classifier": {
+    "mode": "llm_only",
+    "strictness": "balanced",
+    "auto_mark_min_confidence": 0.88,
+    "cache_decisions": true
+  },
+  "runtime": {
+    "max_concurrent_tags": 3,
+    "keep_browser_open": true,
+    "preserve_review_only_pages": true,
+    "preserve_all_pages_open": true,
+    "navigation_timeout_ms": 45000,
+    "row_wait_timeout_ms": 60000,
+    "classification_workers": 8,
+    "page_checkpoint_every": 20
+  },
+  "llm": {
+    "enabled": true,
+    "routing": {
+      "timeout_seconds": 8
+    },
+    "providers": {
+      "openai": {
+        "label": "OpenAI",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.openai.com/v1",
+        "model": "gpt-4.1-mini"
+      },
+      "anthropic": {
+        "label": "Anthropic",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.anthropic.com/v1",
+        "api_version": "2023-06-01",
+        "model": "claude-sonnet-4-5"
+      },
+      "gemini": {
+        "label": "Google Gemini",
+        "enabled": true,
+        "api_key": "",
+        "model": "gemini-2.5-flash"
+      },
+      "github_models": {
+        "label": "GitHub Models",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://models.github.ai",
+        "api_version": "2026-03-10",
+        "organization": "",
+        "model": "openai/gpt-4.1"
+      },
+      "groq": {
+        "label": "Groq",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.groq.com/openai/v1",
+        "model": "llama-3.3-70b-versatile"
+      },
+      "together": {
+        "label": "Together AI",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.together.xyz/v1",
+        "model": "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
+      },
+      "xai": {
+        "label": "xAI",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.x.ai/v1",
+        "model": "grok-3-mini"
+      },
+      "deepseek": {
+        "label": "DeepSeek",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.deepseek.com/v1",
+        "model": "deepseek-chat"
+      },
+      "openrouter": {
+        "label": "OpenRouter",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://openrouter.ai/api/v1",
+        "model": "openai/gpt-4.1-mini"
+      },
+      "mistral": {
+        "label": "Mistral",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.mistral.ai/v1",
+        "model": "mistral-small-latest"
+      },
+      "perplexity": {
+        "label": "Perplexity",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.perplexity.ai",
+        "model": "sonar"
+      },
+      "cohere": {
+        "label": "Cohere",
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.cohere.com/v2",
+        "model": "command-a-03-2025"
+      }
+    }
+  },
+  "woo_api": {
+    "enabled": false,
+    "consumer_key": "",
+    "consumer_secret": "",
+    "base_api_url": "",
+    "per_page": 100,
+    "request_timeout_seconds": 30
+  }
+}

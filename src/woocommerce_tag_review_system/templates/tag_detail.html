@@ -1,0 +1,19 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>{{ tag.tag_title }}</title><link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"></head>
+<body>
+<div class="page shell wide">
+  <header class="hero compact"><div><a class="back" href="{{ url_for('run_detail', run_id=run_id) }}">← Run detail</a><h1>{{ tag.tag_title }}</h1><p><span class="badge">{{ tag.status }}</span></p><p><a href="{{ tag.tag_url }}" target="_blank" rel="noreferrer">Tag URL</a></p></div></header>
+  <section class="stats-grid">
+    <div class="stat"><span>Keep</span><strong>{{ tag.keep_count }}</strong></div>
+    <div class="stat"><span>Mark</span><strong>{{ tag.mark_count }}</strong></div>
+    <div class="stat"><span>Review</span><strong>{{ tag.review_count }}</strong></div>
+    <div class="stat"><span>Actionable pages</span><strong>{{ tag.actionable_count }}</strong></div>
+    <div class="stat"><span>Review-only pages</span><strong>{{ tag.review_only_count }}</strong></div>
+    <div class="stat"><span>Clean pages</span><strong>{{ tag.clean_count or 0 }}</strong></div>
+    <div class="stat"><span>Failed pages</span><strong>{{ tag.failed_count }}</strong></div>
+    <div class="stat"><span>Duration</span><strong>{{ tag.duration_human or '-' }}</strong></div>
+  </section>
+  {% if tag.error_summary %}<section class="card error-card"><h2>Failure summary</h2><p><strong>{{ tag.error_type }}</strong> — {{ tag.error_summary }}</p><p class="muted">{{ tag.last_error }}</p></section>{% endif %}
+  <section class="card"><h2>Page summaries</h2><div class="table-wrap"><table><thead><tr><th>Page</th><th>Status</th><th>DOM rows</th><th>Candidate rows</th><th>Assessed rows</th><th>Skipped rows</th><th>Keep</th><th>Mark</th><th>Review</th><th>Checked</th><th>LLM calls</th><th>Cache hits</th><th>Fallbacks</th><th>API failures</th><th>Parse failures</th><th>Open</th></tr></thead><tbody>{% for page in tag.pages %}<tr><td><a href="{{ url_for('page_detail', run_id=run_id, tag_id=tag.tag_id, page_number=page.page_number) }}">{{ page.page_number }}</a></td><td><span class="badge">{{ page.status }}</span></td><td>{{ page.total_rows }}</td><td>{{ page.candidate_rows or 0 }}</td><td>{{ page.assessed_rows or 0 }}</td><td>{{ page.skipped_rows_count or 0 }}</td><td>{{ page.keep_count }}</td><td>{{ page.mark_count }}</td><td>{{ page.review_count }}</td><td>{{ page.checkbox_count }}</td><td>{{ page.llm_call_count or 0 }}</td><td>{{ page.cache_hit_count or 0 }}</td><td>{{ page.fallback_count or 0 }}</td><td>{{ page.api_failure_count or 0 }}</td><td>{{ page.parse_failure_count or 0 }}</td><td>{{ 'Yes' if page.preserved_tab else 'No' }}</td></tr>{% else %}<tr><td colspan="16">No pages stored yet.</td></tr>{% endfor %}</tbody></table></div></section>
+  <section class="card"><h2>Tag logs</h2><div class="log-box">{% for log in tag.logs %}<div class="log-line">[{{ log.timestamp }}] {{ log.level }} — {{ log.message }}</div>{% else %}<div class="log-line">No logs yet.</div>{% endfor %}</div></section>
+</div></body></html>
